@@ -5,15 +5,17 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/ggalihpp/go-backend-ggalihpp/primary"
 	"github.com/labstack/echo"
 	minio "github.com/minio/minio-go"
 )
 
 // SetupHandler -
 func SetupHandler(e *echo.Group) {
-	e.GET("", getBucketList)
+	e.GET("/bucket", getBucketList)
 	e.POST("", uploadFileEP)
 	e.GET("/list", getAllObject)
+	e.GET("/:filename", downloadFile)
 }
 
 func minioClient() (*minio.Client, error) {
@@ -79,4 +81,24 @@ func getAllObject(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, result)
+}
+
+func downloadFile(c echo.Context) error {
+	bucket := "test"
+	name := c.Param("filename")
+
+	mc, err := minioClient()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	file, ext, err := DownloadFile(mc, bucket, name)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	defer primary.DeleteAFile(file)
+
+	return c.Attachment(file, name+ext)
+
 }

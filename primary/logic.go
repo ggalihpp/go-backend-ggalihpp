@@ -2,6 +2,7 @@ package primary
 
 import (
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -38,4 +39,14 @@ func GenerateBytesMask(n int, withString bool) string {
 	}
 
 	return string(b)
+}
+
+// DeleteAFile -- Delete a file
+func DeleteAFile(fileName string) error {
+	err := os.Remove(fileName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

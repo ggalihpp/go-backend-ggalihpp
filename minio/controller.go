@@ -2,8 +2,8 @@ package minio
 
 import (
 	"fmt"
+	"mime"
 	"mime/multipart"
-	"path/filepath"
 
 	"github.com/ggalihpp/go-backend-ggalihpp/primary"
 	minio "github.com/minio/minio-go"
@@ -33,8 +33,7 @@ func UploadFile(minioClient *minio.Client, file *multipart.FileHeader, bucketNam
 	contentType := file.Header["Content-Type"][0]
 
 	fmt.Println(contentType)
-	extension := filepath.Ext(file.Filename)
-	name = name + extension
+	//extension := filepath.Ext(file.Filename)
 
 	_, err := minioClient.PutObject(bucketName, name, xfile, file.Size, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
@@ -72,4 +71,40 @@ func GetAllFiles(minioClient *minio.Client, bucket string) (hasil []H, err error
 	}
 
 	return
+}
+
+// DownloadFile will GET A FILE
+func DownloadFile(mc *minio.Client, bucket, name string) (fileLocation, ext string, err error) {
+
+	object, err := mc.GetObject(bucket, name, minio.GetObjectOptions{})
+	if err != nil {
+		fmt.Println(err)
+		return
+
+	}
+
+	file, err := object.Stat()
+	if err != nil {
+		fmt.Println(err)
+		return
+
+	}
+
+	exts, err := mime.ExtensionsByType(file.ContentType)
+	if err != nil {
+		return
+	}
+	ext = exts[0]
+
+	fmt.Println("Extensions: ", exts)
+
+	err = mc.FGetObject(bucket, name, "./temp/"+file.Key, minio.GetObjectOptions{})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fileLocation = "./temp/" + file.Key
+	return
+
 }
